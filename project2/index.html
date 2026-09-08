@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Market Dashboard</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <main class="dashboard-card">
+        <header class="card-header">
+            <div class="header-titles">
+                <h1>Market Overview</h1>
+                <p id="statusMessage">System ready for data injection</p>
+            </div>
+            <div class="portfolio-value">
+                <span class="label">Simulated Balance</span>
+                <h2 class="value" id="balance">$0.00</h2>
+            </div>
+        </header>
+
+        <div class="chart-graphic">
+            <div class="grid-lines"></div>
+            <div class="trend-line"></div>
+            <div class="trend-glow"></div>
+        </div>
+
+
+        <ul id="stockList" class="asset-list">
+            <!-- Placeholder Item 1 -->
+            <li id="stock1" class="asset-row">
+                <div class="asset-info">
+                    <div class="asset-icon">?</div>
+                    <div class="asset-name-group">
+                        <strong id="fullname1">Pending Asset</strong>
+                        <span id="stock1short">TKR</span>
+                    </div>
+                </div>
+                <div class="asset-metrics">
+                    <strong class="price" id="price1">--</strong>
+                    <span class="change">--</span>
+                </div>
+            </li>
+            
+            <!-- Placeholder Item 2 -->
+            <li id="stock2" class="asset-row">
+                <div class="asset-info">
+                    <div class="asset-icon">?</div>
+                    <div class="asset-name-group">
+                        <strong id="fullname2">Pending Asset</strong>
+                        <span id="stock2short">TKR</span>
+                    </div>
+                </div>
+                <div class="asset-metrics">
+                    <strong class="price" id="price2">--</strong>
+                    <span class="change">--</span>
+                </div>
+            </li>
+
+            <!-- Placeholder Item 3 -->
+            <li id="stock3" class="asset-row">
+                <div class="asset-info">
+                    <div class="asset-icon">?</div>
+                    <div class="asset-name-group">
+                        <strong id="fullname3">Pending Asset</strong>
+                        <span id="stock3short">TKR</span>
+                    </div>
+                </div>
+                <div class="asset-metrics">
+                    <strong class="price" id="price3">--</strong>
+                    <span class="change">--</span>
+                </div>
+            </li>
+            <li id="stock4" class="asset-row">
+                <div class="asset-info">
+                    <div class="asset-icon">?</div>
+                    <div class="asset-name-group">
+                        <strong id="fullname4">Random Asset</strong>
+                        <span id="stock4short">TKR</span>
+                    </div>
+                </div>
+                <div class="asset-metrics">
+                    <strong class="price" id="price4">--</strong>
+                    <span class="change">--</span>
+                </div>
+            </li>
+        </ul>
+
+        <!-- Controls -->
+        <div class="action-bar">
+            <div class="action-row">
+                <button class="btn btn-primary" id="syncBtn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+                    Sync Live Data
+                </button>
+                <button class="btn btn-icon" id="themeToggleBtn" title="Toggle Theme">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+                </button>
+            </div>
+
+            <div class="action-row">
+                <button class="btn btn-secondary" id="randomCryptoBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 3h5v5M4 20L21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
+                    Random Crypto
+                </button>
+                <button class="btn btn-secondary" id="addBalanceBtn">
+                    <!-- Plus/Add Icon -->
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                    Add Balance
+                </button>
+            </div>
+        </div>
+    </main>
+    
+    <script src="script.js"></script>
+</body>
+</html>
