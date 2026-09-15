@@ -267,6 +267,5 @@ body {
     border-color: var(--text-muted);
 }
 
-/* Utility classes for your JS to use later */
 .text-up { color: var(--positive) !important; }
 .text-down { color: var(--negative) !important; }

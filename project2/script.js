@@ -1,17 +1,23 @@
 let current_balance = 0;
-
+let balance_history = [current_balance];
 function addBal(){
     const bal = document.getElementById("balance");
-    current_balance = current_balance + 100;
-    bal.textContent = "$" + current_balance;
+    const idx = balance_history.length - 1;
+    if(balance_history[idx] < 1000){
+        bal.textContent = "$" + current_balance;
+        current_balance = current_balance + 100;
+        balance_history.push(current_balance);
+    } else {
+        console.log("User attempted to exceed add limit");
+    }
 }
 
 function getStocks(){
     let coins;
     fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=3&page=1&sparkline=false').then(response => response.json()).then(data => {
-        coins = data;
+        coins = data; //let data = [] or i guess {}
         console.log('Data is now stored!', coins);
-
+        console.log(data.length);
         for(let i = 1; i <= 3; i++){
         const fullName = document.getElementById("fullname" + i);
         const btc = document.getElementById("stock" + i + "short");
