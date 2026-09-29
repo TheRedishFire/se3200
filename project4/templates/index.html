@@ -1,0 +1,52 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Message Log Application</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div class="app-container">
+    <header class="app-header">
+      <h1>Message Log</h1>
+      <p>Send and view real-time log entries</p>
+    </header>
+
+    <main class="app-content">
+      <section class="card form-card">
+        <h2>New Message</h2>
+        <form id="messageForm">
+          <div class="form-group">
+            <label for="messageInput">Message</label>
+            <textarea
+              id="messageInput"
+              name="message"
+              rows="4"
+              placeholder="Type your message here..."
+              required
+            ></textarea>
+          </div>
+          <div class="form-actions">
+            <span id="formStatus" class="status-text"></span>
+            <button type="submit" id="submitBtn">Send Message</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card list-card">
+        <div class="list-header">
+          <h2>Recorded Messages</h2>
+          <button type="button" id="refreshBtn" class="secondary-btn">Refresh</button>
+        </div>
+        <ul id="messageContainer" class="message-container">
+            <li class="empty-state">Loading messages...</li>
+          </ul>
+      </section>
+    </main>
+  </div>
+
+  <script src="/static/script.js"></script>
+</body>
+</html>
