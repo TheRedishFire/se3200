@@ -28,12 +28,12 @@ def add_msg_to_memory(new_msg):
 def home():
     return render_template("index.html")
 
-@app.route("/api", methods=['GET'])
+@app.route("/messages", methods=['GET'])
 def get_msgs(): # gets the messages from json file then puts them on page
     stored_msgs = get_stored_msgs()
     return jsonify(stored_msgs), 200
 
-@app.route("/api", methods=['POST'])
+@app.route("/messages", methods=['POST'])
 def post_msg():
     data = request.get_json() # converts to pythong dic {"message": "Hello!"}
     # from the js post function

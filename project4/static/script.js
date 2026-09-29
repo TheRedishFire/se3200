@@ -9,7 +9,7 @@ const messageContainer = document.getElementById('messageContainer');
 
 const sendBtn = document.getElementById('submitBtn')
 
-API = "/api";
+API = "/messages";
 
 // load is the get function returns ["hi", "hello"]
 // remember GET/POST is from browser side of things
