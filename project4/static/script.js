@@ -7,13 +7,14 @@ const messageForm = document.getElementById('messageForm');
 //  display/inject the messages onto the page already posted
 const messageContainer = document.getElementById('messageContainer');
 
-const sendBtn = document.getElementById('submitBtn')
+const sendBtn = document.getElementById('submitBtn');
 
+const delBtn = document.getElementById('clearBtn');
 API = "/messages";
 
 // load is the get function returns ["hi", "hello"]
 // remember GET/POST is from browser side of things
-async function loadMessages() {
+async function loadMessages() { //this is a get function
   const response = await fetch(API);
   const messages = await response.json();
   messageContainer.innerHTML = ""
@@ -36,8 +37,17 @@ async function postMessage(e) {
   messageInput.value = ""
   await loadMessages();
 }
+
+async function remove() {
+  await fetch(API, {
+    method: "DELETE"
+  });
+  await loadMessages();
+
+  
+}
 loadMessages();
-//sendBtn.addEventListener('click', postMessage);
+delBtn.addEventListener('click', remove);
 messageForm.addEventListener('submit', postMessage); // if they press enter
 
 /*

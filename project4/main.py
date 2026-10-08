@@ -18,11 +18,15 @@ def get_stored_msgs():
             return []
 
 def add_msg_to_memory(new_msg):
-    items = get_stored_msgs()
+    items = get_stored_msgs() # python dic
     items.append(new_msg)
 
     with open(FILE_NAME, "w", encoding="utf-8") as f:
         json.dump(items, f, indent=2)  # Converts list to JSON text in file
+
+def remove():
+    with open(FILE_NAME, "w", encoding="utf-8") as f:
+        json.dump([], f)
 
 @app.route("/")
 def home():
@@ -41,6 +45,12 @@ def post_msg():
     add_msg_to_memory(text)
     # 201 = "a new resource was created"
     return "", 201
+
+@app.route("/messages", methods=['DELETE'])
+def clear_msgs():
+    remove()
+    return "", 200
+
 
 @app.errorhandler(404)
 def page_not_found(error):
