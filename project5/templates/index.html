@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AutoManager Pro</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="app-header">
+        <h1>AutoManager Pro</h1>
+        <p>Inventory Management System</p>
+    </header>
+
+    <main class="container">
+        <!-- Left Column: The List of Cars -->
+        <section class="inventory-section">
+            <div class="section-header">
+                <h2>Current Inventory</h2>
+                <!-- Clicking this will clear the form via JS -->
+                <button id="btnAddNew" class="btn btn-primary">+ Add New Car</button>
+            </div>
+            
+            <!-- JS will inject car cards into this div -->
+            <div id="carList" class="car-list">
+                <!-- Example of what JS should generate:
+                <div class="car-card">
+                    <div class="car-info">
+                        <h3>2021 Toyota Camry</h3>
+                        <p class="car-trim">Trim: XLE</p>
+                        <p class="car-price">$24,500</p>
+                    </div>
+                    <div class="car-actions">
+                        <button class="btn btn-secondary edit-btn">Edit</button>
+                        <button class="btn btn-danger delete-btn">Delete</button>
+                    </div>
+                </div>
+                -->
+            </div>
+        </section>
+
+        <!-- Right Column: The Form -->
+        <section class="form-section">
+            <h2 id="formTitle">Add New Car</h2>
+            
+            <form id="carForm">
+                <!-- Hidden input to track if we are updating an existing car -->
+                <input type="hidden" id="carId" name="carId">
+
+                <div class="form-group">
+                    <label for="make">Make</label>
+                    <input type="text" id="make" name="make" placeholder="e.g. Toyota" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="model">Model</label>
+                    <input type="text" id="model" name="model" placeholder="e.g. Camry" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="trim">Trim</label>
+                    <input type="text" id="trim" name="trim" placeholder="e.g. SE, XLE">
+                </div>
+
+                <div class="form-group row">
+                    <div class="col">
+                        <label for="year">Year</label>
+                        <input type="number" id="year" name="year" min="1900" max="2100" placeholder="2024" required>
+                    </div>
+                    <div class="col">
+                        <label for="price">Price ($)</label>
+                        <input type="number" id="price" name="price" step="0.01" min="0" placeholder="25000.00" required>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" id="btnSave" class="btn btn-success">Save Car</button>
+                    <!-- Clicking this will clear the form and reset to "Add" mode -->
+                    <button type="button" id="btnCancel" class="btn btn-secondary hidden">Cancel</button>
+                </div>
+            </form>
+        </section>
+    </main>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
