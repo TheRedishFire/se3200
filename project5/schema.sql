@@ -1,0 +1,8 @@
+CREATE TABLE IF NOT EXISTS cars (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    make TEXT NOT NULL,
+    model TEXT NOT NULL,
+    trim TEXT,
+    year INTEGER NOT NULL,
+    price REAL NOT NULL
+);

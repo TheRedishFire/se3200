@@ -16,17 +16,9 @@ class CarDatabase:
 
     def _init_db(self):
         with self.get_connection() as db:
-            # duplicate CREATE TABLE typo
-            db.execute("""
-                CREATE TABLE IF NOT EXISTS cars (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    make TEXT NOT NULL,
-                    model TEXT NOT NULL,
-                    trim TEXT,
-                    year INTEGER NOT NULL,
-                    price REAL NOT NULL
-                )
-            """)
+            with open('schema.sql', 'r') as f:
+                sql_script = f.read()
+            db.executescript(sql_script)
             db.commit()
 
     def get_all(self):
