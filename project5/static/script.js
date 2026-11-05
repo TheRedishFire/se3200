@@ -37,7 +37,7 @@ async function loadCars() {
                 </div>
                 <div class="car-actions">
                     <!-- Pass the whole car object as JSON to the edit function -->
-                    <button class="btn btn-secondary" onclick='editCar(${JSON.stringify(car)})'>Edit</button>
+                    <button class="btn btn-secondary" onclick='showEditCarForm(${JSON.stringify(car)})'>Edit</button>
                     <!-- Pass just the ID to the delete function -->
                     <button class="btn btn-danger" onclick="deleteCar(${car.id})">Delete</button>
                 </div>
@@ -78,7 +78,6 @@ async function saveCar(e) {
 
 async function deleteCar(id) {
     const consent = confirm("Are you sure you want to delete this car?");
-
     if (consent) {
         await fetch(`${API}/${id}`, {
             method: "DELETE"
@@ -87,19 +86,18 @@ async function deleteCar(id) {
     }
 }
 
-function editCar(car) {
-
+function showEditCarForm(car) {
     idInput.value = car.id;
-
     makeInput.value = car.make;
     modelInput.value = car.model;
     trimInput.value = car.trim;
     yearInput.value = car.year;
     priceInput.value = car.price;
-
     formTitle.textContent = "Edit Car";
     btnCancel.classList.remove("hidden");
 }
+
+
 
 carForm.addEventListener('submit', saveCar);
 btnCancel.addEventListener('click', resetForm);
