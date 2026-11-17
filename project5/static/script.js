@@ -57,20 +57,26 @@ async function saveCar(e) {
         year: parseInt(yearInput.value),
         price: parseFloat(priceInput.value)
     };
-    const http = "POST";
+    let http = "POST";
     const carID = idInput.value;
     let url = API;
     //updating existing car
     if(carID){
         http = "PUT";
-        url = `${API}/${carId}`;
+        url = `${API}/${carID}`;
     }
 
-    await fetch(url, {
+    const response = await fetch(url, {
         method: http,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(carData)
     });
+
+    if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    alert(err.error || `Request failed (${response.status})`);
+    return;                     // don't reset the form on failure
+    }
 
     resetForm();
     await loadCars();
