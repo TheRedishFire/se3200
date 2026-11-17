@@ -1,5 +1,8 @@
 from flask import Flask, request, jsonify, abort, render_template
 from db_interface import CarDatabase
+import auth
+
+
 
 app = Flask(__name__)
 DATABASE = 'cars.db'
@@ -10,6 +13,7 @@ def home():
     return render_template("index.html")
 
 @app.route('/cars', methods=['GET'])
+@auth.login_required
 def list_cars():
     return jsonify(db_manager.get_all()), 200
 
@@ -52,16 +56,72 @@ def delete_car(car_id):
         abort(404)
     return jsonify({"message": "deleted"}), 200
 
+@app.route("/sessions", methods=["POST"])
+def login():
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+
+    user = db_manager.get_user_by_email(email)
+    if user is None or not auth.verify_password(password, user["password_hash"]):
+        return jsonify({"error": "Invalid email or password"}), 401
+
+    sid = auth.start_session(user["id"])
+    resp = jsonify({
+        "id": user["id"], "first_name": user["first_name"],
+        "last_name": user["last_name"], "email": user["email"],
+    })
+    resp.set_cookie(
+        auth.SESSION_COOKIE, sid,
+        httponly=True, samesite="Lax", path="/", max_age=auth.SESSION_MAX_AGE,
+    )
+    return resp, 200
+
+
+@app.route("/sessions", methods=["DELETE"])
+def logout():
+    auth.end_session(request.cookies.get(auth.SESSION_COOKIE))
+    resp = jsonify({"message": "logged out"})
+    resp.delete_cookie(auth.SESSION_COOKIE, path="/")
+    return resp, 200
+
+
+@app.route("/sessions/current", methods=["GET"])
+@auth.login_required
+def current_session():
+    return jsonify(db_manager.get_user(auth.current_user_id())), 200
+
+@app.route("/users", methods=["POST"])
+def register_user():
+    data = request.get_json(silent=True) or {}
+    required = ("first_name", "last_name", "email", "password")
+    if not all(data.get(k) for k in required):
+        return jsonify({"error": "Missing required fields"}), 422
+
+    email = data["email"].strip().lower()
+    if db_manager.get_user_by_email(email) is not None:
+        return jsonify({"error": "That email is already registered"}), 409
+
+    pw_hash = auth.hash_password(data["password"])
+    user = db_manager.create_user(
+        data["first_name"], data["last_name"], email, pw_hash
+    )
+    if user is None:                                  # race: unique violation
+        return jsonify({"error": "That email is already registered"}), 409
+
+    resp = jsonify(user)
+    resp.headers["Location"] = f"/users/{user['id']}"
+    return resp, 201
+
+
 
 @app.after_request
 def add_cors_headers(response):
-    # any website can access this API
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    response.headers['Access-Control-Allow-Headers'] = 'Content-Type'
-    response.headers['Access-Control-Allow-Methods'] = 'GET, POST, PUT, DELETE, OPTIONS'
-    
+    response.headers["Access-Control-Allow-Origin"] = "http://127.0.0.1:5000"
+    response.headers["Access-Control-Allow-Credentials"] = "true"
+    response.headers["Access-Control-Allow-Headers"] = "Content-Type"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
     return response
-
 
 @app.errorhandler(404)
 def not_found(error):

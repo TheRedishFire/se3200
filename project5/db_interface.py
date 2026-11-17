@@ -65,3 +65,32 @@ class CarDatabase:
             db.execute("DELETE FROM cars WHERE id = ?", (car_id,))
             db.commit()
             return True
+    
+    def create_user(self, first_name, last_name, email, pw_hash):
+        try:
+            with self.get_connection() as db:
+                cur = db.execute(
+                    "INSERT INTO users (first_name, last_name, email, password_hash) "
+                    "VALUES (?, ?, ?, ?)",
+                    (first_name, last_name, email, pw_hash),
+                )
+                db.commit()
+                return self.get_user(cur.lastrowid)
+        except sqlite3.IntegrityError:
+            return None   # caller treats None as "email taken" → 409
+
+    def get_user(self, user_id):
+        with self.get_connection() as db:
+            row = db.execute(
+                "SELECT id, first_name, last_name, email FROM users WHERE id = ?",
+                (user_id,),
+            ).fetchone()
+            return dict(row) if row else None
+
+    def get_user_by_email(self, email):
+        with self.get_connection() as db:
+            row = db.execute(
+                "SELECT * FROM users WHERE email = ?",
+                (email,),
+            ).fetchone()
+            return dict(row) if row else None

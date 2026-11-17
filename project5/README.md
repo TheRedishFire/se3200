@@ -1,22 +1,254 @@
-CREATE TABLE cars (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    make TEXT NOT NULL,
+# AutoManager Pro
+
+A small inventory management application for tracking vehicles. Users must
+register and authenticate before they can view or modify the car inventory.
+
+- **Backend:** Python 3 / Flask, SQLite (`sqlite3` stdlib)
+- **Frontend:** vanilla HTML, CSS, JavaScript (no frameworks)
+
+---
+
+## Resources
+
+### User
+
+| Attribute | Data Type | Description |
+| :--- | :--- | :--- |
+| `id` | Integer | The unique identifier (Primary Key). |
+| `first_name` | String | The user's given name. |
+| `last_name` | String | The user's family name. |
+| `email` | String | Login identifier. Unique and case-insensitive. |
+| `password_hash` | String | PBKDF2-HMAC-SHA256 hash of the user's password. Never returned by the API. |
+| `created_at` | String (ISO 8601) | Timestamp of account creation. |
+
+### Car
+
+| Attribute | Data Type | Description |
+| :--- | :--- | :--- |
+| `id` | Integer | The unique identifier (Primary Key). |
+| `make` | String | The manufacturer (e.g. Toyota, Ford). |
+| `model` | String | The specific model (e.g. Camry, Mustang). |
+| `trim` | String | The package level (e.g. SE, GT, XLE). Optional. |
+| `year` | Integer | The manufacturing year (e.g. 2021). |
+| `price` | Real (Float) | The listing price of the vehicle. |
+
+---
+
+## Database Schema
+
+SQLite schema, applied automatically from `schema.sql` at server start.
+
+```sql
+CREATE TABLE IF NOT EXISTS users (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    first_name    TEXT NOT NULL,
+    last_name     TEXT NOT NULL,
+    email         TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    password_hash TEXT NOT NULL,
+    created_at    TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS cars (
+    id    INTEGER PRIMARY KEY AUTOINCREMENT,
+    make  TEXT NOT NULL,
     model TEXT NOT NULL,
-    trim TEXT,
-    year INTEGER NOT NULL,
+    trim  TEXT,
+    year  INTEGER NOT NULL,
     price REAL NOT NULL
 );
+```
+
+`UNIQUE COLLATE NOCASE` on `users.email` enforces case-insensitive
+uniqueness at the database level, as a backstop behind the API's own
+duplicate check.
+
+---
 
 ## REST API Endpoints
 
-The server implements the following RESTful routes for the `cars` resource:
+### Authentication & Session
+
+These endpoints manage user accounts and authenticated sessions. The
+session cookie (`sid`, `HttpOnly`, `SameSite=Lax`) is set by
+`POST /sessions` and cleared by `DELETE /sessions`.
+
+| Name | HTTP Method | Path | Auth Required | Success | Possible Errors |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Register user** | `POST` | `/users` | No | `201 Created` + `Location: /users/<id>` | `409 Conflict` (email taken), `422 Unprocessable Entity` (missing fields) |
+| **Log in** | `POST` | `/sessions` | No | `200 OK` + `Set-Cookie: sid=...` | `401 Unauthorized` (invalid credentials) |
+| **Get current session** | `GET` | `/sessions/current` | Yes | `200 OK` (user object) | `401 Unauthorized` |
+| **Log out** | `DELETE` | `/sessions` | Yes | `200 OK` | `401 Unauthorized` |
+
+`POST /sessions` returns the same `401` message
+(`"Invalid email or password"`) whether the email does not exist or the
+password is wrong — this prevents user enumeration via the API.
+
+### Cars
+
+All car endpoints require a valid session cookie. Requests without a
+session receive `401 Unauthorized`.
 
 | Name | HTTP Method | Path | Description |
 | :--- | :--- | :--- | :--- |
 | **List car collection** | `GET` | `/cars` | Returns a JSON array of all cars in the inventory. |
 | **Retrieve car member** | `GET` | `/cars/<id>` | Returns a JSON object of a single car specified by its ID. |
-| **Create car member** | `POST` | `/cars` | Creates a new car record using JSON data provided in the request body. |
+| **Create car member** | `POST` | `/cars` | Creates a new car record using JSON data provided in the request body. Returns `201` with `Location: /cars/<id>`. |
 | **Update car member** | `PUT` | `/cars/<id>` | Replaces the data of an existing car with the JSON data provided in the request body. |
 | **Delete car member** | `DELETE` | `/cars/<id>` | Removes the specified car record from the database. |
 
-Resource: CarAttributeData TypeDescriptionidIntegerThe unique identifier (Primary Key).makeStringThe manufacturer (e.g., Toyota, Ford).modelStringThe specific model (e.g., Camry, Mustang).trimStringThe package level (e.g., SE, GT, XLE).yearIntegerThe manufacturing year (e.g., 2021).priceReal (Float)The listing price of the vehicle.
+**Error responses used across all endpoints:**
+
+| Code | Meaning |
+| :--- | :--- |
+| `401 Unauthorized` | No active session, or invalid credentials on login. |
+| `404 Not Found` | The requested resource does not exist. |
+| `409 Conflict` | Uniqueness violation (e.g. registering an email that already exists). |
+| `422 Unprocessable Entity` | Request body is valid JSON but missing required fields or contains invalid values. |
+
+---
+
+## Password Hashing
+
+Passwords are hashed using **PBKDF2-HMAC-SHA256**, provided by
+`werkzeug.security` (bundled with Flask).
+
+- **Algorithm:** `pbkdf2:sha256`
+- **Salt:** 16-byte random salt per user (generated by werkzeug)
+- **Iterations:** werkzeug's current default (`600_000` as of Werkzeug 3.x)
+- **Storage:** stored as an ASCII string in `users.password_hash` — the
+  format is `pbkdf2:sha256:<iterations>$<salt>$<hash>`
+- **Verification:** `werkzeug.security.check_password_hash(stored, provided)`
+  returns `True` / `False`; it re-derives the hash with the same salt and
+  compares in constant time
+
+The plaintext password never touches the database and is discarded
+immediately after hashing. `password_hash` is never included in any API
+response — the `get_user()` query used to build responses does not
+`SELECT` that column.
+
+Hashing wrappers live in `auth.py` (`hash_password`, `verify_password`);
+callers in `app.py` never touch the `werkzeug` API directly.
+
+---
+
+## Session Store
+
+Sessions are stored **in memory** in a Python dictionary within the
+Flask process:
+
+```python
+# auth.py
+SESSIONS = {}           # { "<sid>": {"user_id": 1} }
+```
+
+- The **session ID** is generated with
+  `secrets.token_urlsafe(32)` — 32 bytes of OS-level randomness,
+  URL-safe base64 encoded. `secrets` is used (not `random`) because
+  session IDs are security-sensitive and must be unpredictable.
+- The **cookie** sent to the browser contains **only** the SID:
+  ```
+  Set-Cookie: sid=<opaque-token>; HttpOnly; SameSite=Lax; Path=/; Max-Age=3600
+  ```
+- The **session data** stored on the server is minimal, per the
+  assignment's "no superfluous data" rule: only `user_id`. Name, email,
+  and any other attributes are looked up from the database on each
+  request, so they cannot go stale.
+- **Logout** removes the entry from `SESSIONS` and clears the cookie
+  client-side.
+- **Sessions do not survive a server restart** — this is the intended
+  behavior for an in-memory store. Restarting Flask invalidates all
+  active sessions.
+
+Cookie flag rationale:
+
+| Flag | Value | Purpose |
+| :--- | :--- | :--- |
+| `HttpOnly` | on | JavaScript cannot read the cookie → protects against XSS session theft. |
+| `SameSite` | `Lax` | Cookie is not sent on cross-site requests → mitigates CSRF while still allowing top-level navigation. |
+| `Path` | `/` | Cookie is attached to all requests on the same origin. |
+| `Max-Age` | `3600` | Expires after 1 hour. |
+
+---
+
+## Authorization
+
+Authorization is enforced on **both** the client and the server:
+
+- **Server:** all `/cars` routes are wrapped with the `@login_required`
+  decorator (in `auth.py`). Any request without a valid `sid` cookie
+  matching an active session receives `401 Unauthorized`.
+- **Client:** on page load, `refreshAuthState()` calls
+  `GET /sessions/current`. If the response is `200`, the car inventory
+  and form sections are unhidden; otherwise they remain hidden and the
+  sign-in / register panel is shown. The client never reveals
+  restricted UI elements before authentication.
+
+The client-side gating is cosmetic — the server-side check is what
+actually prevents unauthenticated access.
+
+All authenticated users have equal permissions; there is no per-user
+discrimination of resources.
+
+---
+
+## Project Structure
+
+```
+.
+├── app.py              # Flask routes
+├── auth.py             # Session store, hashing, @login_required decorator
+├── db_interface.py     # Database access layer (CarDatabase class)
+├── schema.sql          # SQLite schema (users, cars)
+├── cars.db             # SQLite database (created on first run)
+├── templates/
+│   └── index.html      # Single-page client UI
+└── static/
+    ├── script.js       # Client-side logic (fetch, auth gating, CRUD)
+    └── style.css       # Styling
+```
+
+---
+
+## Running the Application
+
+```bash
+
+python -m venv venv
+source venv/bin/activate         # macOS / Linux
+venv\Scripts\activate          # Windows
+
+pip install flask
+python app.py
+```
+
+Then open <http://127.0.0.1:5000>.
+
+The database file (`cars.db`) is created and initialized from
+`schema.sql` on first startup. To reset to an empty database, delete
+`cars.db` and restart the server.
+
+---
+
+## Example Flow
+
+```bash
+# register
+curl -i -X POST http://127.0.0.1:5000/users \
+  -H "Content-Type: application/json" \
+  -d '{"first_name":"Ada","last_name":"Lovelace","email":"ada@example.com","password":"hunter2"}'
+# → 201 Created, Location: /users/1
+
+# log in and save cookie
+curl -i -c cookies.txt -X POST http://127.0.0.1:5000/sessions \
+  -H "Content-Type: application/json" \
+  -d '{"email":"ada@example.com","password":"hunter2"}'
+# → 200 OK, Set-Cookie: sid=...
+
+# access protected resource
+curl -i -b cookies.txt http://127.0.0.1:5000/cars
+# → 200 OK, [] (empty inventory)
+
+# same request without cookie
+curl -i http://127.0.0.1:5000/cars
+# → 401 Unauthorized, {"error":"Authentication required"}
+```
